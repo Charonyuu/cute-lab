@@ -41,7 +41,7 @@ define('eye', { id: 'dash', label: 'Dashes', gap: .2, hw: .11, lightInk: 1, ring
 define('eye', { id: 'slash', label: 'Slashes', gap: .3, hw: .095, ring: ['none'],
   draw(c, { k }) { c.lineWidth = .05 * k; c.beginPath(); c.moveTo(-.07 * k, .11 * k); c.lineTo(.07 * k, -.11 * k); c.stroke(); } });
 define('eye', { id: 'squint', label: '> <', gap: .28, hw: .095, ring: ['none'],
-  draw(c, { k, s }) { c.lineWidth = .05 * k; c.beginPath(); c.moveTo(-s * .07 * k, -.08 * k); c.lineTo(s * .07 * k, 0); c.lineTo(-s * .07 * k, .08 * k); c.stroke(); } });
+  draw(c, { k, s }) { c.lineWidth = .05 * k; c.beginPath(); c.moveTo(s * .07 * k, -.08 * k); c.lineTo(-s * .07 * k, 0); c.lineTo(s * .07 * k, .08 * k); c.stroke(); } });  /* tips point inward: > < */
 define('eye', { id: 'wink', label: 'Wink', gap: .22, sides: ['toon', 'squint'], ring: ['none'] });
 /* internal, used by states */
 define('eye', { id: 'x', label: 'X', gap: .25, hw: .1, hidden: 1,
