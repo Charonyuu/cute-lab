@@ -219,6 +219,63 @@ define('state', { id: 'umbrella', label: 'Umbrella', zh: '撐傘', cycle: 3.6, p
     c.strokeStyle = '#7CC8FF'; c.lineWidth = .02 * u; [-.6, .1, .7].forEach((k, i) => { const q = (p * 4 + i * .3) % 1; if (P.open < .9 || q > .4) return; const x = canopy[0] + k * cov, y = canopy[1] - cov * .9 * (1 - k * k) - .05 * u;
       c.globalAlpha = 1 - q / .4; c.beginPath(); c.arc(x, y, .06 * u + q * .2 * u, PI * 1.1, PI * 1.9); c.stroke(); }); c.globalAlpha = 1; } });
 
+/* ---------------- 錘子 Hammer: poof → wind up overhead → BONK on the floor → proud grin ----------------
+   A squeaky toy hammer: the handle runs along +x from the hand (rotated by rot), the barrel sits across it.
+   At the hit the handle is level and the barrel stands upright, so its bottom cap lands on the floor. */
+const HAM = { head: '#FF5A6E', cap: '#FFD23F', grip: '#FFD23F', len: .6, hw: .2, hh: .33 };
+function drawHammer(c, X, hand, rot, s) {
+  if (s <= 0) return; const { u } = X, L = HAM.len * u, hw = HAM.hw * u, hh = HAM.hh * u, line = darken(HAM.head, .38);
+  c.save(); c.translate(hand[0], hand[1]); c.rotate(rot); c.scale(s, s); c.lineCap = 'round'; c.lineJoin = 'round';
+  c.strokeStyle = darken(HAM.grip, .4); c.lineWidth = .15 * u; c.beginPath(); c.moveTo(-.1 * u, 0); c.lineTo(L - hw, 0); c.stroke();
+  c.strokeStyle = HAM.grip; c.lineWidth = .09 * u; c.beginPath(); c.moveTo(-.1 * u, 0); c.lineTo(L - hw, 0); c.stroke();
+  c.fillStyle = HAM.head; c.strokeStyle = line; c.lineWidth = .04 * u; rrect(c, L - hw, -hh, 2 * hw, 2 * hh, .07 * u); c.fill(); c.stroke();
+  c.fillStyle = HAM.cap; for (const y of [-hh, hh]) { rrect(c, L - hw - .03 * u, y - .07 * u, 2 * hw + .06 * u, .14 * u, .06 * u); c.fill(); c.stroke(); }
+  c.fillStyle = '#FFFFFF'; c.globalAlpha *= .55; rrect(c, L - hw + .05 * u, -hh + .11 * u, .06 * u, 2 * hh - .22 * u, .03 * u); c.fill();
+  c.restore();
+}
+const easeIn3 = k => k * k * k;
+function hammerPose(p) {
+  const arm = span(p, 0, .08) * (1 - span(p, .86, .94)), s = easeBack(span(p, .08, .18)) * (1 - easeIO(span(p, .8, .88)));
+  const HOLD = [-15, -70], UP = [-112, -138], HIT = [56, 0];   // [arm angle, hammer angle] in degrees
+  let k = [...HOLD];
+  if (p >= .2 && p < .42) { const e = easeIO(span(p, .2, .4)); k = [lerp(HOLD[0], UP[0], e), lerp(HOLD[1], UP[1], e)]; k[1] += 4 * Math.sin(p * 120) * span(p, .36, .42); }
+  else if (p >= .42 && p < .47) { const e = easeIn3(span(p, .42, .47)); k = [lerp(UP[0], HIT[0], e), lerp(UP[1], HIT[1], e)]; }
+  else if (p >= .47 && p < .7) { k = [HIT[0], HIT[1] - 10 * bump(p, .48, .56)]; }   // a little rebound off the floor
+  else if (p >= .7) { const e = easeIO(span(p, .7, .8)); k = [lerp(HIT[0], HOLD[0], e), lerp(HIT[1], HOLD[1], e)]; }
+  return { arm, s, th: k[0] * D, rot: k[1] * D, swing: span(p, .42, .47), hit: bump(p, .47, .62) };
+}
+define('state', { id: 'hammer', label: 'Hammer', zh: '錘子', cycle: 2.4, pose: .52,
+  move(C, p, T, cyc) { const P = hammerPose(p);
+    C.dx = -.55 * easeIO(span(p, 0, .12)) * (1 - easeIO(span(p, .86, .98)));     // step left so the hammer fits on screen
+    C.look = p < .2 ? [.7, -.3] : p < .42 ? [-.3, -.9] : p < .72 ? [.9, .5] : [.3, 0];
+    if (p > .2 && p < .47) { C.eyeOverride = 'squint'; C.mouthOverride = 'flat'; }
+    if (p > .55 && p < .8) { C.eyeOverride = 'happy'; C.mouthOverride = 'open'; }
+    C.sway = -9 * easeIO(span(p, .2, .4)) * (1 - span(p, .42, .46)) + 12 * bump(p, .44, .58) + Math.sin(TAU * p * 2);
+    C.squash = -.06 * easeIO(span(p, .2, .4)) * (1 - span(p, .42, .45)) + .1 * bump(p, .47, .56) + .05 * bump(p, .08, .16);
+    C.shake = .025 * Math.sin(T * 70) * bump(p, .47, .6); C.hop = .06 * bump(p, .6, .7);
+    C.eyePop = 1 + .15 * bump(p, .1, .2); C.blink = blinkAmt(p, [{ c: .9 }], cyc); },
+  back(c, X) { const P = hammerPose(X.p); armBack(c, X, handTh(X, P.th), P.arm); },
+  extras(c, X) {
+    const { p, u, tint, floorY } = X, P = hammerPose(p), h = handTh(X, P.th);
+    const poof = bump(p, .06, .2) + bump(p, .78, .9); if (poof > 0) { c.globalAlpha = Math.min(1, poof) * .7; c.fillStyle = tint;
+      [0, 1, 2, 3, 4].forEach(i => { const a = i * TAU / 5 + p * 8; ell(c, h[0] + .4 * u + Math.cos(a) * .3 * u * poof, h[1] - .2 * u + Math.sin(a) * .3 * u * poof, .13 * u, .13 * u); c.fill(); }); c.globalAlpha = 1; }
+    const head = [h[0] + Math.cos(P.rot) * HAM.len * u * P.s, h[1] + Math.sin(P.rot) * HAM.len * u * P.s];
+    /* swoosh arcs behind the head while it comes down */
+    if (P.swing > 0 && P.swing < 1) { c.strokeStyle = tint; c.lineCap = 'round';
+      for (let i = 0; i < 3; i++) { c.globalAlpha = .8 - i * .22; c.lineWidth = (.07 - i * .015) * u; c.beginPath(); c.arc(h[0], h[1], (HAM.len + .1 - i * .14) * u, P.rot - 1.1 * P.swing, P.rot - .1); c.stroke(); } c.globalAlpha = 1; }
+    armFront(c, X, h, P.arm, false);
+    drawHammer(c, X, h, P.rot, P.s);
+    if (P.arm > .95) A.gooHand(c, X, h);
+    /* BONK: comic burst at the floor, dust puffs and little stars flying off */
+    if (P.hit > 0) { const g = [head[0], floorY], k = P.hit;
+      c.save(); c.translate(g[0], g[1] - .05 * u); c.globalAlpha = Math.min(1, k * 1.6);
+      c.fillStyle = '#FFD23F'; c.strokeStyle = '#FF5A6E'; c.lineWidth = .04 * u; star(c, 0, 0, (.3 + .15 * k) * u, .5, 9); c.fill(); c.stroke();
+      c.restore(); c.globalAlpha = 1;
+      const d = span(p, .47, .7); c.fillStyle = tint; c.globalAlpha = (1 - d) * .8;
+      [-1, 1].forEach(sd => { for (let i = 0; i < 2; i++) { ell(c, g[0] + sd * (.3 + .55 * d + i * .18) * u, floorY - (.08 + i * .1 + .15 * d) * u, (.12 - i * .03) * u, (.1 - i * .03) * u); c.fill(); } }); c.globalAlpha = 1;
+      c.fillStyle = '#FFC20E'; [-1, 1, .3].forEach((sd, i) => { const v = span(p, .48 + i * .02, .7); if (v <= 0 || v >= 1) return;
+        c.globalAlpha = 1 - v; sparkle(c, g[0] + sd * (.25 + .5 * v) * u, floorY - (.3 + .9 * v - .5 * v * v) * u, .09 * u); c.fill(); }); c.globalAlpha = 1; } } });
+
 /* ---------------- Chinese names for every state (shown in the UI) ---------------- */
 Object.entries({ idle: '待機', listen: '聆聽', think: '思考', write: '打字', success: '成功', alert: '注意', error: '出錯', sleep: '睡覺', dance: '跳舞', dead: '融化', sword: '拔劍', gooblade: '黏液劍', goothrow: '甩出黏液劍' })
   .forEach(([id, zh]) => { if (CUTE.get('state', id)) define('state', { id, zh }); });

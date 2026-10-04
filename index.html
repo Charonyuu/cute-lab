@@ -296,17 +296,17 @@ button,input,select{font:inherit;color:inherit}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- i18n first (translates the static page), then the engine (order matters: kit → render → export), style plugins, the UI -->
-<script src="i18n.js?v=27"></script>
+<script src="i18n.js?v=28"></script>
 <script>CUTE_I18N.translateDom(); document.querySelectorAll('.lang [data-lang]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.lang === CUTE_I18N.LANG)); b.addEventListener('click', () => CUTE_I18N.setLang(b.dataset.lang)); });</script>
-<script src="engine/kit.js?v=27"></script>
-<script src="engine/render.js?v=27"></script>
-<script src="engine/export.js?v=27"></script>
-<script src="styles/shapes.js?v=27"></script>
-<script src="styles/face.js?v=27"></script>
-<script src="styles/body.js?v=27"></script>
-<script src="styles/states.js?v=27"></script>
-<script src="styles/actions.js?v=27"></script>
-<script src="styles/palette.js?v=27"></script>
-<script src="app.js?v=27"></script>
+<script src="engine/kit.js?v=28"></script>
+<script src="engine/render.js?v=28"></script>
+<script src="engine/export.js?v=28"></script>
+<script src="styles/shapes.js?v=28"></script>
+<script src="styles/face.js?v=28"></script>
+<script src="styles/body.js?v=28"></script>
+<script src="styles/states.js?v=28"></script>
+<script src="styles/actions.js?v=28"></script>
+<script src="styles/palette.js?v=28"></script>
+<script src="app.js?v=28"></script>
 </body>
 </html>
