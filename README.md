@@ -57,7 +57,14 @@ The full design notes — coordinate systems, the style interfaces, what the SVG
 
 ## Licence
 
-[MIT](LICENSE). The Nunito font is loaded from Google Fonts (SIL Open Font License).
+**Free for noncommercial use** under the [PolyForm Noncommercial License 1.0.0](LICENSE.md): personal projects,
+learning, research, hobby work, schools and non-profits.
+
+**Commercial use needs a licence** — using Cute Lab or its code in a product, a paid service, client work, or to make
+characters you sell. To ask for one, open an issue or contact [@Charonyuu](https://github.com/Charonyuu) on GitHub.
+
+The source is public, but because it restricts commercial use this is *source-available*, not OSI open source.
+The Nunito font is loaded from Google Fonts (SIL Open Font License).
 
 ---
 
@@ -74,4 +81,6 @@ Cute Lab 是一個做「會動的可愛角色」的小工作室，引擎和所�
 
 **新增樣式**：在 `styles/*.js` 寫一個物件、呼叫一次 `CUTE.define()`，選單、隨機、預設、分享連結和所有匯出格式都會自動支援。詳細做法在 [PLAYBOOK.md](PLAYBOOK.md)。
 
-**授權**：MIT。
+**授權**：採用 [PolyForm Noncommercial 1.0.0](LICENSE.md)。個人、學習、研究、興趣、學校和非營利用途都可以免費使用。
+
+**商用授權請聯絡我**：用在產品、付費服務、接案，或拿做出來的角色去賣，都需要另外取得商用授權。請在 GitHub 開 issue，或聯絡 [@Charonyuu](https://github.com/Charonyuu)。
