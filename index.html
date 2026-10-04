@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Cute Lab：設計會動的可愛角色，自動變形、錄成影片，匯出 PNG / SVG / GIF。">
+<title>Cute Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* 風格：奶油紙 + 粗墨線 + 實心位移陰影，像貼紙一樣的按鈕；強調色跟著角色顏色走 */
+:root{
+  --bg:#FFF6EC;--paper:#FFFDF9;--soft:#F6ECDF;--soft-2:#EFE2D2;--ink:#2B2320;--muted:#8A7B70;--faint:#B9AA9C;
+  --mc:#1ED8C0;--mc-soft:color-mix(in srgb,var(--mc) 22%,var(--paper));
+  --pop:4px 4px 0 var(--ink);--pop-s:2px 2px 0 var(--ink);
+  --font:"Nunito","PingFang TC","Noto Sans TC","Microsoft JhengHei",ui-rounded,system-ui,sans-serif;
+  --spring:cubic-bezier(.34,1.56,.64,1);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:600 14px/1.45 var(--font);padding-inline:16px;padding-block:14px 48px;min-height:100vh}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--mc);outline-offset:2px}
+.btn{height:40px;padding:0 16px;border-radius:999px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--pop-s);font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;transition:transform .15s,box-shadow .15s,background-color .15s;white-space:nowrap}
+.btn:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--ink)}
+.btn svg{width:17px;height:17px;flex:none}
+.btn.dark{background:var(--ink);color:var(--paper)}
+.btn.accent{background:var(--mc)}
+.btn[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btn.big{height:48px;padding:0 22px;font-size:15px}
+
+/* 頂欄 */
+.top{max-width:1200px;margin:0 auto 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;color:inherit}
+.brand canvas{width:42px;height:42px;display:block;border-radius:14px;background:var(--mc-soft);border:2px solid var(--ink);box-shadow:var(--pop-s)}
+.brand b{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1}
+.brand small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.menu-wrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 8px);width:280px;max-height:calc(100dvh - 90px);overflow-y:auto;background:var(--paper);border:2px solid var(--ink);border-radius:18px;box-shadow:var(--pop);padding:8px;z-index:30;animation:drop .3s var(--spring)}
+@keyframes drop{from{transform:translateY(-8px) scale(.97);opacity:0}}
+.menu .mh{font-size:11.5px;font-weight:800;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
+.menu .mh+button{margin-top:0}
+.menu button{width:100%;min-height:36px;border:0;background:none;border-radius:10px;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;font-weight:700;font-size:13.5px;text-align:left}
+.menu button:hover,.menu button:focus-visible{background:var(--soft)}
+.menu .chips{display:flex;flex-wrap:wrap;gap:4px;padding:2px 6px 6px}
+.menu hr{border:0;border-top:2px dashed var(--soft-2);margin:6px 4px}
+
+/* 版面 */
+.studio{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:22px;align-items:start}
+@media (max-width:920px){.studio{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:26px;box-shadow:var(--pop)}
+
+/* 舞台 */
+.stage-col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.stage{position:relative;aspect-ratio:1/1;width:min(100%,74vh,680px);min-width:min(100%,300px);margin:0 auto;border-radius:30px;overflow:hidden;touch-action:none;cursor:pointer;
+  border:2px solid var(--ink);box-shadow:var(--pop);transition:background-color .4s}
+.stage.bg-soft{background:radial-gradient(circle at 50% 42%,color-mix(in srgb,var(--mc) 30%,#fff) 0,color-mix(in srgb,var(--mc) 12%,var(--paper)) 55%,color-mix(in srgb,var(--mc) 6%,var(--bg)) 100%)}
+.stage.bg-dots{background:radial-gradient(circle,color-mix(in srgb,var(--mc) 45%,var(--soft-2)) 1.6px,transparent 2px) 0 0/22px 22px,var(--paper)}
+.stage.bg-grid{background:linear-gradient(var(--soft-2) 1.5px,transparent 1.5px) 0 0/28px 28px,linear-gradient(90deg,var(--soft-2) 1.5px,transparent 1.5px) 0 0/28px 28px,var(--paper)}
+.stage.bg-plain{background:var(--paper)}
+.stage.bg-green{background:#00B140}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.stage-bar{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:flex-end;gap:8px;pointer-events:none}
+.stage-bar>*{pointer-events:auto}
+.bgpick{display:flex;gap:5px;padding:5px;background:color-mix(in srgb,var(--paper) 85%,transparent);border:2px solid var(--ink);border-radius:999px}
+.bgpick button{width:24px;height:24px;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0;transition:transform .25s var(--spring)}
+.bgpick button:hover{transform:scale(1.15)}
+.bgpick button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--ink)}
+.hint{font-size:12px;font-weight:800;padding:5px 11px;border-radius:999px;background:var(--ink);color:var(--paper);opacity:.85}
+.live{position:absolute;top:12px;left:12px;display:flex;gap:6px;align-items:center;font-size:12px;font-weight:900;padding:5px 11px 5px 9px;border-radius:999px;background:var(--paper);border:2px solid var(--ink)}
+.live i{width:9px;height:9px;border-radius:50%;background:#FF4D4D;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* 狀態列 */
+.states{display:flex;gap:8px;overflow-x:auto;justify-content:safe center;padding:4px 4px 8px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.st{flex:none;scroll-snap-align:start;width:76px;padding:6px 4px 7px;border-radius:18px;border:2px solid var(--ink);background:var(--paper);box-shadow:var(--pop-s);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;font-weight:800;transition:transform .2s var(--spring),box-shadow .15s,background-color .2s}
+.st:hover{transform:translateY(-3px) rotate(-2deg)}
+.st canvas{width:52px;height:52px;display:block;pointer-events:none}
+.st[aria-pressed="true"]{background:var(--mc-soft);box-shadow:var(--pop);transform:translateY(-3px)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* 團隊 */
+.team{padding:12px 14px;display:flex;align-items:center;gap:12px;min-height:84px}
+.team h3{margin:0;font-size:14px;font-weight:900;writing-mode:vertical-rl;letter-spacing:.2em;color:var(--muted)}
+.team-list{display:flex;gap:8px;overflow-x:auto;padding:4px 2px;flex:1;scrollbar-width:none}
+.team-empty{color:var(--faint);font-weight:700;font-size:13px}
+.tm{position:relative;flex:none}
+.tm-pick{width:58px;height:58px;border-radius:18px;border:2px solid var(--ink);background:var(--soft);padding:0;cursor:pointer;display:grid;place-items:center;transition:transform .2s var(--spring)}
+.tm-pick:hover{transform:translateY(-2px)}
+.tm-pick canvas{display:block;pointer-events:none}
+.tm.active .tm-pick{background:var(--mc-soft);box-shadow:var(--pop-s)}
+.tm-x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);display:grid;place-items:center;padding:0;cursor:pointer;opacity:0;transform:scale(.6);transition:opacity .15s,transform .25s var(--spring)}
+.tm-x svg{width:10px;height:10px}
+.tm:hover .tm-x,.tm-x:focus-visible{opacity:1;transform:none}
+.tm.new{animation:tmIn .6s var(--spring)}
+@keyframes tmIn{from{transform:scale(.2) rotate(-30deg);opacity:0}}
+
+/* 檢視器 */
+.inspector{padding:10px;position:sticky;top:14px;max-height:calc(100vh - 28px);display:flex;flex-direction:column;min-width:0}
+@media (max-width:920px){.inspector{position:static;max-height:none}}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:4px;background:var(--soft);border-radius:18px;border:2px solid var(--ink)}
+.tabs button{height:38px;border:0;border-radius:13px;background:none;cursor:pointer;font-weight:900;font-size:14px;color:var(--muted);transition:background-color .2s,color .2s,transform .3s var(--spring)}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper);transform:scale(1.03)}
+.panels{overflow-y:auto;padding:6px 6px 8px;margin-top:6px;scrollbar-width:thin}
+.panel{animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}}
+.sec{padding:10px 0 4px}
+.sec+.sec{border-top:2px dashed var(--soft-2);margin-top:8px}
+.sec h4{margin:0 0 8px;font-size:13px;font-weight:900;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec h4 small{font-weight:700;color:var(--muted);font-size:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:7px}
+.tiles.sm{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+.tile{border:2px solid transparent;border-radius:16px;background:var(--soft);padding:5px 2px 6px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;font-weight:800;color:var(--muted);transition:transform .25s var(--spring),background-color .15s,border-color .15s;min-width:0}
+.tile canvas{display:block;pointer-events:none}
+.tile span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.tile:hover{transform:translateY(-2px);background:var(--soft-2);color:var(--ink)}
+.tile[aria-pressed="true"]{border-color:var(--ink);background:var(--mc-soft);color:var(--ink);box-shadow:var(--pop-s)}
+.tile.off{opacity:.38}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{height:32px;padding:0 13px;border-radius:999px;border:2px solid var(--ink);background:var(--paper);cursor:pointer;font-weight:800;font-size:12.5px;transition:transform .2s var(--spring)}
+.chip:hover{transform:translateY(-1px)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.row{display:flex;align-items:center;gap:12px;padding:5px 0}
+.row>label,.row>.lbl{flex:0 0 72px;font-weight:800;font-size:13px}
+.row input[type=range]{flex:1;min-width:0;accent-color:var(--ink)}
+.row output{flex:0 0 52px;text-align:right;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:7px}
+.sw{aspect-ratio:1;border-radius:50%;border:2px solid var(--ink);cursor:pointer;padding:0;position:relative;transition:transform .25s var(--spring)}
+.sw:hover{transform:scale(1.12) rotate(8deg)}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--ink)}
+.sw.custom{background:conic-gradient(#ff5a5a,#ffc20e,#5ccb77,#1ed8c0,#3f95f5,#9966ff,#ff5aa5,#ff5a5a)}
+.sw.custom input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:0;padding:0}
+.note{font-size:12.5px;color:var(--muted);font-weight:700;margin:6px 0 0}
+.progress{height:10px;border-radius:999px;border:2px solid var(--ink);background:var(--soft);overflow:hidden;margin-top:8px}
+.progress i{display:block;height:100%;width:0;background:var(--mc);transition:width .2s linear}
+.rec-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+/* 提示 */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:999px;font-weight:800;pointer-events:none;transition:opacity .2s,transform .35s var(--spring);z-index:50;max-width:calc(100vw - 32px);text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.fallback{position:fixed;inset:auto 16px 70px auto;width:320px;max-width:calc(100vw - 32px);z-index:40;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center}
+.fallback p{margin:0 22px;font-size:13px;color:var(--muted)}
+.fallback img{width:160px;height:160px;border-radius:14px;background:repeating-conic-gradient(#EEE 0 25%,#FFF 0 50%) 0 0/16px 16px}
+.fallback textarea{width:100%;height:130px;font:11px ui-monospace,Menlo,monospace;border:2px solid var(--ink);border-radius:12px;background:var(--soft);padding:8px;resize:vertical}
+.x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);display:grid;place-items:center;cursor:pointer;padding:0}
+.x svg{width:13px;height:13px}
+.credit{max-width:1180px;margin:22px auto 0;text-align:center;font-size:12px;color:var(--faint);font-weight:700}
+.credit a{color:inherit}
+/* 桌機：整頁剛好一個畫面，不捲外層；只有右側面板和狀態列在內部捲動 */
+@media (min-width:921px) and (min-height:600px){
+  html,body{height:100%}
+  body{height:100dvh;overflow:hidden;display:flex;flex-direction:column;padding-block:12px 10px}
+  .top{flex:none;width:100%;margin-bottom:12px}
+  .studio{flex:1 1 auto;min-height:0;width:100%;grid-template-rows:minmax(0,1fr);align-items:stretch}
+  .stage-col{height:100%}
+  .stage-col{min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto auto auto;gap:10px}
+  .stage-box{container-type:size;min-height:0;display:grid;place-items:center;padding:0 6px 6px 2px}
+  /* 桌機：舞台可以比高還寬（最多 1.6:1），角色畫在中間的正方形區域 */
+  .stage{aspect-ratio:auto;width:100cqw;height:min(100cqh,100cqw);min-width:0;max-width:none}
+  .inspector{position:static;height:100%;max-height:none;min-height:0}
+  .team{min-height:0;padding:8px 12px}
+  .team-empty{font-size:12px}
+  .actions .btn.big{height:44px}
+  .credit{flex:none;margin:6px auto 0}
+}
+/* ---- 版面 v3：左側直立收藏欄、按鈕放進舞台、狀態兩排 ---- */
+.studio{grid-template-columns:88px minmax(0,1fr) minmax(0,380px)}
+.favs{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 6px;min-height:0;align-self:start}
+.favs h3{margin:0;font-size:13px;font-weight:900;color:var(--muted);letter-spacing:.15em}
+.favs .team-list{display:flex;flex-direction:column;gap:8px;overflow-y:auto;overflow-x:hidden;padding:6px 6px;scrollbar-width:none;flex:0 1 auto;min-height:0}
+.favs .team-empty{width:58px;height:58px;border:2px dashed var(--faint);border-radius:18px;display:grid;place-items:center;color:var(--faint);font-size:22px}
+.stage-top{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:flex-start;gap:8px;pointer-events:none}
+.stage-top>*{pointer-events:auto}
+.stage-top .bgpick{margin-left:auto}
+.stage-top .live{position:static}
+.stage-top .hint{opacity:.8}
+.live:not([hidden])+.hint{display:none}
+.actions{position:absolute;left:0;right:0;bottom:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:0 12px;pointer-events:none}
+.actions>*{pointer-events:auto}
+.actions .btn{height:42px;padding:0 16px}
+.states{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;overflow:visible;padding:2px 6px 6px 2px;justify-content:stretch}
+.st{width:auto}
+.states{max-height:calc(2 * 84px + 16px);overflow-y:auto;scrollbar-width:thin;align-content:start}
+@media (max-width:920px){
+  .studio{grid-template-columns:minmax(0,1fr)}
+  .stage-col{order:1}.favs{order:2;flex-direction:row;align-self:stretch;padding:8px 12px}.inspector{order:3}
+  .favs h3{writing-mode:vertical-rl}
+  .favs .team-list{flex-direction:row;overflow-x:auto;overflow-y:hidden}
+  .states{grid-template-columns:repeat(auto-fill,minmax(66px,1fr))}
+}
+@media (max-width:520px){.actions .btn{height:38px;padding:0 12px;font-size:13px}.stage-top .hint{display:none}}
+@media (min-width:921px) and (min-height:600px){
+  .favs{max-height:100%}
+  .stage-col{grid-template-rows:minmax(0,1fr) auto}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#" aria-label="Cute Lab"><canvas id="logo" width="84" height="84" aria-hidden="true"></canvas><span><b>Cute Lab</b><small>會動的可愛角色工作室</small></span></a>
+  <button class="btn" id="btnShare" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>分享</button>
+  <div class="menu-wrap">
+    <button class="btn dark" id="btnExport" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>匯出</button>
+    <div class="menu" id="expMenu" role="menu" aria-label="匯出" hidden></div>
+  </div>
+</header>
+
+<main class="studio">
+  <aside class="card favs" aria-label="收藏">
+    <h3>收藏</h3>
+    <div class="team-list" id="teamList"></div>
+    <span class="team-empty" id="teamEmpty" title="按「收藏」把角色存起來">♡</span>
+  </aside>
+
+  <section class="stage-col">
+    <div class="stage-box"><div class="stage bg-soft" id="stage" tabindex="0" aria-label="角色預覽：點一下互動，拖曳調整眼睛">
+      <canvas id="hero" aria-hidden="true"></canvas>
+      <div class="stage-top">
+        <div class="live" id="liveTag" hidden><i></i><span id="liveTxt">自動變形中</span></div>
+        <span class="hint" id="hint">點我互動 · 拖曳調眼睛</span>
+        <div class="bgpick" id="bgPick" role="group" aria-label="舞台背景"></div>
+      </div>
+      <div class="actions">
+        <button class="btn accent" id="btnAuto" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><span>自動變形</span></button>
+        <button class="btn dark" id="btnRandom" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>隨機</button>
+        <button class="btn" id="btnSave" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z"/></svg>收藏</button>
+      </div>
+    </div></div>
+    <div class="states" id="states" role="group" aria-label="狀態"></div>
+  </section>
+
+  <aside class="card inspector" aria-label="設定">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="panels" id="panels">
+      <div class="panel" data-tab="shape" role="tabpanel">
+        <div class="sec"><h4>身體形狀 <small>換形狀會自然變形</small></h4><div class="tiles" id="tShape"></div></div>
+      </div>
+      <div class="panel" data-tab="face" role="tabpanel" hidden>
+        <div class="sec"><h4>眼睛</h4><div class="tiles sm" id="tEyes"></div></div>
+        <div class="sec"><h4>眉毛</h4><div class="chips" id="cBrows"></div></div>
+        <div class="sec"><h4>嘴巴</h4><div class="tiles sm" id="tMouth"></div></div>
+        <div class="sec"><h4>臉頰</h4><div class="tiles sm" id="tCheeks"></div></div>
+        <div class="sec"><h4>微調</h4>
+          <div class="row"><label for="fSize">眼睛大小</label><input type="range" id="fSize" min="60" max="150" step="5"><output id="oSize"></output></div>
+          <div class="row"><label for="fGap">眼距</label><input type="range" id="fGap" min="55" max="160" step="5"><output id="oGap"></output></div>
+          <div class="row"><label for="fTilt">歪頭</label><input type="range" id="fTilt" min="-15" max="15" step="1"><output id="oTilt"></output></div>
+          <div class="row"><span class="lbl">五官顏色</span><div class="chips" id="cInk"></div></div>
+        </div>
+      </div>
+      <div class="panel" data-tab="style" role="tabpanel" hidden>
+        <div class="sec"><h4>顏色</h4><div class="swatches" id="swatches"></div></div>
+        <div class="sec"><h4>質感</h4><div class="tiles sm" id="tFinish"></div></div>
+        <div class="sec"><h4>配件</h4><div class="tiles sm" id="tAcc"></div></div>
+      </div>
+      <div class="panel" data-tab="motion" role="tabpanel" hidden>
+        <div class="sec"><h4>自動變形 <small id="cycleInfo"></small></h4>
+          <div class="row"><label for="mHold">停留</label><input type="range" id="mHold" min="0.3" max="4" step="0.1"><output id="oHold"></output></div>
+          <div class="row"><label for="mDur">變形速度</label><input type="range" id="mDur" min="0.4" max="2.5" step="0.1"><output id="oDur"></output></div>
+          <div class="row"><span class="lbl">順序</span><div class="chips" id="cOrder"></div></div>
+        </div>
+        <div class="sec"><h4>變形清單 <small><button class="chip" id="plAll" type="button">全選</button> <button class="chip" id="plNone" type="button">清空</button></small></h4><div class="tiles sm" id="tPlaylist"></div>
+          <p class="note">點選要輪播的形狀（至少 2 個）。</p></div>
+        <div class="sec"><h4>錄成影片 <small id="recInfo"></small></h4>
+          <div class="row"><span class="lbl">背景</span><div class="chips" id="cRecBg"></div></div>
+          <div class="row"><span class="lbl">尺寸</span><div class="chips" id="cRecSize"></div></div>
+          <div class="rec-row"><button class="btn dark" id="btnRec" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="6" fill="#FF4D4D"/></svg><span>錄製一整輪</span></button></div>
+          <div class="progress" id="recBar" hidden><i></i></div>
+          <p class="note">錄出 WebM（Chrome 支援透明背景）。綠幕可直接在剪輯軟體去背。錄製時請保持此分頁在前景。</p></div>
+      </div>
+      <div class="panel" data-tab="presets" role="tabpanel" hidden><div id="presetList"></div></div>
+    </div>
+  </aside>
+</main>
+
+<div class="card fallback" id="fallback" hidden>
+  <button class="x" id="fbClose" type="button" aria-label="關閉"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  <p id="fbMsg"></p><img id="fbImg" alt="匯出的角色" hidden><textarea id="fbTxt" readonly aria-label="SVG 程式碼" hidden></textarea>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- engine (order matters: kit → render → export), then style plugins, then the UI -->
+<script src="engine/kit.js?v=25"></script>
+<script src="engine/render.js?v=25"></script>
+<script src="engine/export.js?v=25"></script>
+<script src="styles/shapes.js?v=25"></script>
+<script src="styles/face.js?v=25"></script>
+<script src="styles/body.js?v=25"></script>
+<script src="styles/states.js?v=25"></script>
+<script src="styles/actions.js?v=25"></script>
+<script src="styles/palette.js?v=25"></script>
+<script src="app.js?v=25"></script>
+</body>
+</html>

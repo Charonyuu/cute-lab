@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cute Lab · Style QA</title>
+<style>
+:root{--bg:#FAFAF8;--card:#fff;--line:#E9E9E6;--text:#18181B;--text-2:#66666E;--text-3:#A0A0A7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px 16px 60px}
+h1{font-size:22px;margin:0 0 4px}
+p.sub{color:var(--text-2);margin:0 0 18px;max-width:760px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:2}
+.bar label{display:inline-flex;gap:6px;align-items:center;font-weight:600;font-size:13px}
+.bar select,.bar input[type=color]{height:32px;border:1px solid var(--line);border-radius:10px;background:#fff;padding:0 8px}
+h2{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin:26px 0 8px}
+h2 small{text-transform:none;letter-spacing:0;font-weight:500;margin-left:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.cell{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.cell .pair{display:flex;gap:4px}
+.cell canvas,.cell img{display:block;width:112px;height:112px}
+.svgmode .cell canvas,.svgmode .cell img{width:56px;height:56px}
+.cell img{background:repeating-conic-gradient(#F3F3F1 0 25%,#fff 0 50%) 0 0/12px 12px;border-radius:10px}
+.cell b{font-size:12.5px}
+.cell code{font-size:11px;color:var(--text-3)}
+.cell.err{border-color:#F2545B;background:#FFF3F3}
+.cell .msg{font-size:11px;color:#C0353B;text-align:center}
+</style>
+</head>
+<body>
+<h1>Cute Lab · Style QA</h1>
+<p class="sub">Every registered style, live. Each cell swaps ONE part of the base mascot. Turn on “SVG side by side” to check that a style exports the same as it draws (left canvas, right SVG). A red cell means the style threw an error.</p>
+<div class="bar">
+  <label>Base shape <select id="bShape"></select></label>
+  <label>Eyes <select id="bEyes"></select></label>
+  <label>Colour <input type="color" id="bColor" value="#1ED8C0"></label>
+  <label>State <select id="bState"></select></label>
+  <label><input type="checkbox" id="bSvg"> SVG side by side</label>
+</div>
+<div id="out"></div>
+
+<script src="engine/kit.js?v=25"></script>
+<script src="engine/render.js?v=25"></script>
+<script src="engine/export.js?v=25"></script>
+<script src="styles/shapes.js?v=25"></script>
+<script src="styles/face.js?v=25"></script>
+<script src="styles/body.js?v=25"></script>
+<script src="styles/states.js?v=25"></script>
+<script src="styles/actions.js?v=25"></script>
+<script src="styles/palette.js?v=25"></script>
+<script>
+(() => {
+const K = CUTE, R = K.R, X = K.X, $ = s => document.querySelector(s);
+const base = { ...K.P('round', '#1ED8C0', 'toon') };
+const SECTIONS = [
+  ['Shapes', 'shape', 'shape'], ['Eyes', 'eye', 'eyes'], ['Brows', 'brow', 'brows'], ['Mouths', 'mouth', 'mouth'],
+  ['Cheeks', 'cheek', 'cheeks'], ['Finishes', 'finish', 'finish'], ['Accessories', 'accessory', 'acc'], ['States', 'state', null], ['Presets', 'family', null],
+];
+const fill = (sel, list) => { $(sel).innerHTML = list.map(d => `<option value="${d.id}">${d.label}</option>`).join(''); };
+fill('#bShape', K.visible('shape')); fill('#bEyes', K.visible('eye')); fill('#bState', K.reg.state);
+const cells = [];
+function build() {
+  const out = $('#out'); out.innerHTML = ''; cells.length = 0; document.body.classList.toggle('svgmode', $('#bSvg').checked);
+  for (const [title, kind, key] of SECTIONS) {
+    const list = kind === 'family' ? K.reg.family.flatMap(f => f.items.map((o, i) => ({ id: `${f.id}#${i}`, label: f.label, o }))) : K.reg[kind];
+    out.insertAdjacentHTML('beforeend', `<h2>${title}<small>${list.length} · CUTE.define('${kind}', …)</small></h2>`);
+    const g = document.createElement('div'); g.className = 'grid'; out.appendChild(g);
+    for (const d of list) {
+      const o = d.o ? { ...d.o } : key ? { ...base, [key]: d.id } : { ...base }, st = kind === 'state' ? d : K.get('state', $('#bState').value);
+      const el = document.createElement('div'); el.className = 'cell';
+      el.innerHTML = `<div class="pair"><canvas></canvas></div><b>${d.label}${d.hidden ? ' · hidden' : ''}</b><code>${d.id}</code>`;
+      g.appendChild(el); const cell = { el, cv: el.querySelector('canvas'), o, st, err: null };
+      if ($('#bSvg').checked) { try { const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(X.animSvg(st, o)); el.querySelector('.pair').appendChild(img); } catch (e) { fail(cell, e); } }
+      cells.push(cell);
+    }
+  }
+}
+function fail(cell, e) { if (cell.err) return; cell.err = e; cell.el.classList.add('err'); cell.el.insertAdjacentHTML('beforeend', `<div class="msg">${String(e.message || e)}</div>`); console.error(e); }
+function frame(now) {
+  const T = now / 1000, small = $('#bSvg').checked ? 56 : 112;
+  for (const c of cells) {
+    if (c.err) continue;
+    try { const d = Math.min(devicePixelRatio || 1, 2); c.cv.width = c.cv.height = small * d; const x = c.cv.getContext('2d'); x.setTransform(d, 0, 0, d, 0, 0);
+      R.drawBlob(x, small, c.o, R.frameOf(c.st, (T / c.st.cycle) % 1), { hero: true, u: .27, cy: .6 }); } catch (e) { fail(c, e); }
+  }
+  requestAnimationFrame(frame);
+}
+const apply = () => { base.shape = $('#bShape').value; base.eyes = $('#bEyes').value; base.color = $('#bColor').value.toUpperCase(); build(); };
+['#bShape', '#bEyes', '#bColor', '#bState', '#bSvg'].forEach(s => $(s).addEventListener('input', apply));
+apply(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
