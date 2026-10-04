@@ -20,6 +20,7 @@ Built with Claude Opus as a pair: the engine, every shape, face and animation is
 - **States / actions**: idle, listening, thinking, typing, success, error, sleeping, dancing, melting, sword swing, wand, walking…
 - **Export**: animated SVG (a fake canvas records the drawing calls and turns them into SVG), PNG, GIF, ZIP of all states
 - **Share links**: the whole character fits in the URL hash; random button, presets, a saved "team"
+- **中文 / English**: switch in the top-right corner (defaults to your browser language)
 
 ## Run
 
@@ -41,6 +42,7 @@ automatically.
 
 ```
 index.html / app.js   UI, generated entirely from the registry
+i18n.js               中文 / English: the Chinese text is the key, T('分享') → 'Share'
 lab.html              QA wall: every registered style in its own cell, canvas vs. SVG side by side
 engine/kit.js         registry, maths, drawing primitives, animation helpers
 engine/render.js      drawBlob(): description + animation frame → drawing; share-token encode/decode
@@ -66,6 +68,7 @@ Cute Lab 是一個做「會動的可愛角色」的小工作室，引擎和所�
 - 選形狀、臉、風格、配件，按一個狀態（思考、打字、成功、睡覺、揮劍……），角色就會動起來。
 - 可以匯出動態 SVG、PNG、GIF，或把所有狀態打包成 ZIP。
 - 整個角色會存在網址裡，複製連結就能分享。
+- 右上角可以切換中文 / English，預設跟著瀏覽器語言。
 
 **本地執行**：直接打開 `index.html`，或在資料夾裡執行 `python3 -m http.server 8765`。
 

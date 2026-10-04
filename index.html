@@ -40,6 +40,13 @@ button,input,select{font:inherit;color:inherit}
 .brand b{font-size:22px;font-weight:900;letter-spacing:-.02em;line-height:1}
 .brand small{display:block;font-size:12px;color:var(--muted);font-weight:700}
 .menu-wrap{position:relative}
+.lang{display:inline-flex;height:40px;padding:3px;border:2px solid var(--ink);border-radius:999px;background:var(--paper);box-shadow:var(--pop-s)}
+.lang button{border:0;background:none;border-radius:999px;padding:0 11px;font:inherit;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.gh{position:relative;display:block;width:40px;height:40px;flex:none;border-radius:50%;border:2px solid var(--ink);box-shadow:var(--pop-s);transition:transform .15s,box-shadow .15s}
+.gh:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 var(--ink)}
+.gh img{width:100%;height:100%;border-radius:50%;display:block;object-fit:cover}
+.gh svg{position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;padding:2px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);color:var(--ink)}
 .menu{position:absolute;right:0;top:calc(100% + 8px);width:280px;max-height:calc(100dvh - 90px);overflow-y:auto;background:var(--paper);border:2px solid var(--ink);border-radius:18px;box-shadow:var(--pop);padding:8px;z-index:30;animation:drop .3s var(--spring)}
 @keyframes drop{from{transform:translateY(-8px) scale(.97);opacity:0}}
 .menu .mh{font-size:11.5px;font-weight:800;color:var(--muted);padding:8px 10px 4px;letter-spacing:.04em}
@@ -198,6 +205,8 @@ button,input,select{font:inherit;color:inherit}
   .favs{max-height:100%}
   .stage-col{grid-template-rows:minmax(0,1fr) auto}
 }
+/* phone: avatar stays on the brand row, the buttons wrap below */
+@media (max-width:600px){.top>.btn,.top>.menu-wrap,.top>.lang{order:2}.top>.gh{order:1}.top::after{content:'';order:1;flex-basis:100%}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -209,6 +218,8 @@ button,input,select{font:inherit;color:inherit}
     <button class="btn dark" id="btnExport" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="expMenu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>匯出</button>
     <div class="menu" id="expMenu" role="menu" aria-label="匯出" hidden></div>
   </div>
+  <div class="lang" role="group" aria-label="語言"><button type="button" data-lang="zh" lang="zh-Hant">中文</button><button type="button" data-lang="en" lang="en">EN</button></div>
+  <a class="gh" href="https://github.com/Charonyuu/cute-lab" target="_blank" rel="noopener" title="原始碼（GitHub）" aria-label="原始碼（GitHub）"><img src="assets/avatar.png" alt="" width="40" height="40"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg></a>
 </header>
 
 <main class="studio">
@@ -229,7 +240,7 @@ button,input,select{font:inherit;color:inherit}
       <div class="actions">
         <button class="btn accent" id="btnAuto" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg><span>自動變形</span></button>
         <button class="btn dark" id="btnRandom" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>隨機</button>
-        <button class="btn" id="btnSave" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z"/></svg>收藏</button>
+        <button class="btn" id="btnSave" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-9.5A4 4 0 0 1 12 8a4 4 0 0 1 7 2.5C19 15.6 12 20 12 20z"/></svg><span data-en="Save">收藏</span></button>
       </div>
     </div></div>
     <div class="states" id="states" role="group" aria-label="狀態"></div>
@@ -284,16 +295,18 @@ button,input,select{font:inherit;color:inherit}
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- engine (order matters: kit → render → export), then style plugins, then the UI -->
-<script src="engine/kit.js?v=25"></script>
-<script src="engine/render.js?v=25"></script>
-<script src="engine/export.js?v=25"></script>
-<script src="styles/shapes.js?v=25"></script>
-<script src="styles/face.js?v=25"></script>
-<script src="styles/body.js?v=25"></script>
-<script src="styles/states.js?v=25"></script>
-<script src="styles/actions.js?v=25"></script>
-<script src="styles/palette.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<!-- i18n first (translates the static page), then the engine (order matters: kit → render → export), style plugins, the UI -->
+<script src="i18n.js?v=26"></script>
+<script>CUTE_I18N.translateDom(); document.querySelectorAll('.lang [data-lang]').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.lang === CUTE_I18N.LANG)); b.addEventListener('click', () => CUTE_I18N.setLang(b.dataset.lang)); });</script>
+<script src="engine/kit.js?v=26"></script>
+<script src="engine/render.js?v=26"></script>
+<script src="engine/export.js?v=26"></script>
+<script src="styles/shapes.js?v=26"></script>
+<script src="styles/face.js?v=26"></script>
+<script src="styles/body.js?v=26"></script>
+<script src="styles/states.js?v=26"></script>
+<script src="styles/actions.js?v=26"></script>
+<script src="styles/palette.js?v=26"></script>
+<script src="app.js?v=26"></script>
 </body>
 </html>

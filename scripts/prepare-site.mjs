@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const files = ['index.html', 'lab.html', 'app.js', ...['engine', 'styles'].flatMap(dir =>
+const files = ['index.html', 'lab.html', 'app.js', 'i18n.js', 'assets/avatar.png', ...['engine', 'styles'].flatMap(dir =>
   readdirSync(path.join(root, dir)).filter(name => name.endsWith('.js')).map(name => `${dir}/${name}`)
 )];
 
